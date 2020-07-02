@@ -46,19 +46,19 @@ namespace TvShowRenaming
             var rootDirectory = new DirectoryInfo(txtSelectedFolder.Text);
             if (rootDirectory.Exists)
             {
-                RenameFilesChildInDir(rootDirectory, rootDirectory.Name);
+                RenameFilesUsingFolderStructure(rootDirectory, rootDirectory.Name);
             }
             lblResult.Text = "Finished...";
         }
 
-        private void RenameFilesChildInDir(DirectoryInfo dir, string prefix)
+        private void RenameFilesUsingFolderStructure(DirectoryInfo dir, string prefix)
         {
             FindFilesAndRenameInFolder(dir, prefix);
 
             var choldDirs = dir.GetDirectories().ToList();
             foreach (var childDir in choldDirs)
             {
-                RenameFilesChildInDir(childDir, $"{prefix}_{childDir.Name}");
+                RenameFilesUsingFolderStructure(childDir, $"{prefix}_{childDir.Name}");
             }
         }
 
@@ -68,12 +68,25 @@ namespace TvShowRenaming
             var videoFile = filesInDir.FirstOrDefault(x => videoExtensions.Contains(x.Extension));
             if (videoFile != null)
             {
-                var newVideoFilePath = Path.Combine(videoFile.DirectoryName, $"{prefix}{videoFile.Extension}");//GetFileNameWithPrefixWithExtension(videoFile, prefix);
-                MoveFile(videoFile.FullName, newVideoFilePath);
-                videoFile = new FileInfo(newVideoFilePath);
+                if (chbUseFoldersStructureForRenaming.Checked)
+                {
+                    var newVideoFilePath = Path.Combine(videoFile.DirectoryName, $"{prefix}{videoFile.Extension}");//GetFileNameWithPrefixWithExtension(videoFile, prefix);
+                    MoveFile(videoFile.FullName, newVideoFilePath);
+                    videoFile = new FileInfo(newVideoFilePath);
+                }
+
                 var subtitleFile = filesInDir.FirstOrDefault(x => subtitleExtensions.Contains(x.Extension));
                 if (subtitleFile != null)
                 {
+                    var subtitleExtension = string.IsNullOrWhiteSpace(txtSubtitleExtension.Text)
+                                            ? subtitleFile.Extension
+                                            : txtSubtitleExtension.Text;
+
+                    if (!subtitleExtension.StartsWith("."))
+                    {
+                        subtitleExtension = $".{subtitleExtension}";
+                    }
+
                     MoveFile(subtitleFile.FullName, $"{GetFileNameWithoutExtension(videoFile)}{subtitleFile.Extension}");
                 }
             }
